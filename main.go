@@ -11,9 +11,23 @@ import (
 
 func main() {
 	logger.InitDefault(constant.APP_NAME, logger.INFO)
-	d := download.PasswordDownloader("")
+
+	err := download.CreateUsersTxt(".")
+
+	if err != nil {
+		logger.Errorf("创建用户文件失败: %v", err)
+		os.Exit(1)
+	}
+
+	d := download.PasswordDownloader("downloads")
 
 	localPath, err := d.DownloadFile(constant.PASSWORD_LIST)
+	if err != nil {
+		logger.Errorf("下载密码文件失败: %v", err)
+		os.Exit(1)
+	}
+
+	logger.Infof("✅ 密码文件已下载: %s", localPath)
 
 	if err != nil {
 		logger.Errorf("下载出错: %v", err)
@@ -23,6 +37,7 @@ func main() {
 	logger.Infof("下载完成，文件位置: %s\n", localPath)
 
 	cfg, err := cmd.ReadConfig()
+
 	if err != nil {
 		if err.Error() == "flag: help requested" {
 			printUsage()

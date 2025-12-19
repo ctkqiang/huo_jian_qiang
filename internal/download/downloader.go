@@ -78,3 +78,51 @@ func (d *Downloader) DownloadFile(url string) (string, error) {
 
 	return filepath, nil
 }
+
+func CreateUsersTxt(dir string) error {
+	commonUsers := []string{
+		"admin", "user1", "testuser", "administrator", "root",
+		"guest", "test", "demo", "user", "oracle",
+		"postgres", "mysql", "web", "www", "ftp",
+		"mail", "email", "smtp", "pop", "imap",
+		"service", "system", "support", "manager", "operator",
+		"monitor", "logger", "backup", "sync", "agent",
+		"client", "server", "node", "master", "slave",
+		"primary", "secondary", "replica", "proxy", "gateway",
+		"firewall", "router", "switch", "access", "auth",
+		"login", "signin", "register", "account", "profile",
+		"dev", "developer", "deploy", "release", "ci",
+		"cd", "build", "jenkins", "ansible", "docker",
+		"kube", "kubernetes", "stack", "app", "api",
+		"webapp", "frontend", "backend", "db", "database",
+		"cache", "redis", "mongo", "elastic", "search",
+		"analytics", "metrics", "telemetry", "trace", "audit",
+		"security", "secure", "vault", "key", "token",
+		"oauth", "sso", "ldap", "ad", "domain",
+		"user2", "user3", "temp", "tmp", "default",
+		"pi", "ubuntu", "debian", "centos", "fedora",
+		"ansible", "vagrant", "ec2-user", "azureuser", "core",
+	}
+
+	dataDir := filepath.Join(dir, "data")
+
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		return err
+	}
+
+	filePath := filepath.Join(dataDir, "users.txt")
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	for _, u := range commonUsers {
+		if _, err := file.WriteString(u + "\n"); err != nil {
+			return err
+		}
+	}
+
+	log.Info("已生成用户列表: %s", filePath)
+	return nil
+}
