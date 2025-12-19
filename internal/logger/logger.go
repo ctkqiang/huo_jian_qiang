@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/term"
 )
 
 type LogLevel int
@@ -68,6 +70,15 @@ func New(cfg Config) *Logger {
 	}
 	if cfg.TimeFormat == "" {
 		cfg.TimeFormat = "2006-01-02 15:04:05"
+	}
+
+	// 自动检测终端是否支持颜色
+	if cfg.Colors {
+		if f, ok := cfg.Output.(*os.File); ok {
+			if !term.IsTerminal(int(f.Fd())) {
+				cfg.Colors = false
+			}
+		}
 	}
 
 	return &Logger{
@@ -139,8 +150,10 @@ func (l *Logger) log(level LogLevel, format string, v ...interface{}) {
 
 	// 添加应用名称
 	if l.appName != "" {
+		builder.WriteString("【")
 		builder.WriteString(l.appName)
-		builder.WriteString(" ")
+		builder.WriteString("】")
+		builder.WriteString(": ")
 	}
 
 	// 添加带颜色的日志级别
@@ -234,7 +247,7 @@ func Fatalf(format string, v ...interface{}) {
 }
 
 // 全局默认日志记录器
-var defaultLogger = Default("APP")
+var defaultLogger = Default("火尖枪")
 
 // InitDefault 设置全局日志记录器
 func InitDefault(appName string, minLevel LogLevel) {
