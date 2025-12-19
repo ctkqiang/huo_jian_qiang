@@ -44,10 +44,22 @@ func New(level string) *Logger {
 }
 
 func (l *Logger) Debug(message interface{}, args ...interface{}) {
-	l.logMessage(zerolog.DebugLevel, message, args...)
+	l.logger.Debug().Msgf("[火尖枪]: %v, args %v", message, args)
 }
 
-func (l *Logger) logMessage(level zerolog.Level, message interface{}, args ...interface{}) {
+func (l *Logger) Warn(message interface{}, args ...interface{}) {
+	l.logger.Warn().Msgf("[火尖枪]: %v, args %v", message, args)
+}
+
+func (l *Logger) Error(message interface{}, args ...interface{}) {
+	l.logger.Error().Msgf("[火尖枪]: %v, args %v", message, args)
+}
+
+func (l *Logger) Info(message interface{}, args ...interface{}) {
+	l.logger.Info().Msgf("[火尖枪]: %v, args %v", message, args)
+}
+
+func (l *Logger) log(level zerolog.Level, message interface{}, args ...interface{}) {
 	event := l.logger.WithLevel(level)
 
 	if msg, ok := message.(string); ok {
