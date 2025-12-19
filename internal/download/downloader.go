@@ -17,7 +17,6 @@ type Downloader struct {
 var log = logger.Default(constant.APP_NAME)
 
 func init() {
-	// 在包初始化时设置全局日志记录器的应用名称和级别
 	logger.InitDefault(constant.APP_NAME, logger.INFO)
 }
 
@@ -30,13 +29,20 @@ func PasswordDownloader(dataDir string) *Downloader {
 }
 
 func (d *Downloader) DownloadFile(url string) (string, error) {
+	targetDir := filepath.Join(d.DataDir, "data")
+
+	if err := os.MkdirAll(targetDir, 0755); err != nil {
+		log.Error("创建目录失败: %v", err)
+		return "", err
+	}
+
 	filename := filepath.Base(url)
 
 	if !strings.HasSuffix(filename, ".txt") {
 		filename = filename + ".txt"
 	}
 
-	filepath := filepath.Join(d.DataDir, filename)
+	filepath := filepath.Join(targetDir, filename)
 
 	resp, err := http.Get(url)
 

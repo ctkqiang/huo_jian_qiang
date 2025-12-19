@@ -4,12 +4,22 @@ import (
 	"fmt"
 	"huo_jian_qiang/cmd"
 	"huo_jian_qiang/internal/constant"
+	"huo_jian_qiang/internal/download"
 	"huo_jian_qiang/internal/logger"
 	"os"
 )
 
 func main() {
 	logger.InitDefault(constant.APP_NAME, logger.INFO)
+	d := download.PasswordDownloader("data")
+
+	localPath, err := d.DownloadFile(constant.PASSWORD_LIST)
+
+	if err != nil {
+		logger.Errorf("下载出错:", err)
+	}
+
+	logger.Infof("下载完成，文件位置: %s\n", localPath)
 
 	cfg, err := cmd.ReadConfig()
 	if err != nil {
