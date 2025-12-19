@@ -63,3 +63,5 @@ go/pkg/mod/
 *.local
 *.bak
 *.tmp
+
+data/

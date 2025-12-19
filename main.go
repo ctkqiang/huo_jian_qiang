@@ -11,12 +11,13 @@ import (
 
 func main() {
 	logger.InitDefault(constant.APP_NAME, logger.INFO)
-	d := download.PasswordDownloader("data")
+	d := download.PasswordDownloader("")
 
 	localPath, err := d.DownloadFile(constant.PASSWORD_LIST)
 
 	if err != nil {
-		logger.Errorf("下载出错:", err)
+		logger.Errorf("下载出错: %v", err)
+		os.Exit(1)
 	}
 
 	logger.Infof("下载完成，文件位置: %s\n", localPath)
