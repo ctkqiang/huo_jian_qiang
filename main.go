@@ -22,6 +22,7 @@ func main() {
 	d := download.PasswordDownloader("downloads")
 
 	localPath, err := d.DownloadFile(constant.PASSWORD_LIST)
+
 	if err != nil {
 		logger.Errorf("下载密码文件失败: %v", err)
 		os.Exit(1)

@@ -1,0 +1,7 @@
+test_config:
+  timeout: 30
+  coverage_target: 80
+  environment: "development"
+  skip_network_tests: false
+  temp_dir: "/tmp/huo_jian_qiang_test"
+  log_level: "info"
