@@ -8,6 +8,31 @@ import (
 	"time"
 )
 
+type Requestbody struct {
+	username string
+	password string
+} //
+
+func PostRequest(basedUrl, body string, timeout int) (string, int, error) {
+	fullURL, err := buildURL(basedUrl, "")
+
+	if err != nil {
+		return "", 0, fmt.Errorf("构建URL失败: %v", err)
+	}
+
+	// client := createHTTPClient(timeout)
+
+	request, err := http.NewRequest("POST", fullURL, strings.NewReader(body))
+
+	if err != nil {
+		return "", 0, fmt.Errorf("创建请求失败: %v", err)
+	}
+
+	request.Header.Set("Accept", "*/*")
+
+	return "", 0, nil
+}
+
 func GetRequest(baseURL, paramA string, timeout int) (string, int, error) {
 	fullURL, err := buildURL(baseURL, paramA)
 	if err != nil {
