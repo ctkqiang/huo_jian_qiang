@@ -115,6 +115,7 @@ func CreateUsersTxt(dir string) error {
 	if err != nil {
 		return err
 	}
+
 	defer file.Close()
 
 	for _, u := range commonUsers {

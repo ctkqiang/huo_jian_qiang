@@ -8,10 +8,12 @@ import (
 	"time"
 )
 
+// I want this dynamic and user can config the key how they want
+// can be usernme , user , email but the password are constant
 type Requestbody struct {
 	username string
 	password string
-} //
+}
 
 func PostRequest(basedUrl, body string, timeout int) (string, int, error) {
 	fullURL, err := buildURL(basedUrl, "")
@@ -20,7 +22,7 @@ func PostRequest(basedUrl, body string, timeout int) (string, int, error) {
 		return "", 0, fmt.Errorf("构建URL失败: %v", err)
 	}
 
-	// client := createHTTPClient(timeout)
+	client := createHTTPClient(timeout)
 
 	request, err := http.NewRequest("POST", fullURL, strings.NewReader(body))
 
@@ -29,8 +31,22 @@ func PostRequest(basedUrl, body string, timeout int) (string, int, error) {
 	}
 
 	request.Header.Set("Accept", "*/*")
+	request.Header.Set("User-Agent", "Mozilla/5.0")
 
-	return "", 0, nil
+	resp, err := client.Do(request)
+	if err != nil {
+		return "", 0, fmt.Errorf("发送请求失败: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// 读取响应
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", resp.StatusCode, fmt.Errorf("读取响应失败: %v", err)
+	}
+
+	responseBody := string(bodyBytes)
+	return responseBody, resp.StatusCode, nil
 }
 
 func GetRequest(baseURL, paramA string, timeout int) (string, int, error) {

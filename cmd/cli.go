@@ -3,6 +3,7 @@ package cmd
 import (
 	"flag"
 	"fmt"
+	"huo_jian_qiang/internal/logger"
 )
 
 type Config struct {
@@ -34,6 +35,8 @@ func ReadConfig() (*Config, error) {
 	if cfg.RequestBody == "" {
 		return nil, fmt.Errorf("缺少必填参数：-a(附加用户输入)")
 	}
+
+	logger.Infof("配置文件: %s", cfg.RequestBody)
 
 	return cfg, nil
 }
