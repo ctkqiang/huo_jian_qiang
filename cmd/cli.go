@@ -36,7 +36,9 @@ func ReadConfig() (*Config, error) {
 		return nil, fmt.Errorf("缺少必填参数：-a(附加用户输入)")
 	}
 
-	logger.Infof("Users File:    %s", getDefaultFileName(cfg.UsersFile))
+	defaultFilr, _ := getDefaultFileName(cfg.UsersFile)
+
+	logger.Infof("Users File:    %s", defaultFilr)
 	logger.Infof("Request Body:  %s", cfg.RequestBody)
 	logger.Infof("Threads:       %d", cfg.Threads)
 	logger.Infof("Delay:         %d", cfg.Delay)
@@ -44,14 +46,14 @@ func ReadConfig() (*Config, error) {
 	return cfg, nil
 }
 
-func getDefaultFileName(user_input string) string {
+func getDefaultFileName(user_input string) (string, error) {
 	if user_input == "*U*" {
-		return "data/users.txt"
+		return "data/users.txt", nil
 	}
 
 	if user_input == "*P*" {
-		return "data/passwords.txt"
+		return "data/passwords.txt", nil
 	}
 
-	return user_input
+	return user_input, nil
 }

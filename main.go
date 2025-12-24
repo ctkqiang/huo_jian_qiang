@@ -35,8 +35,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Infof("下载完成，文件位置: %s\n", localPath)
-
 	cfg, err := cmd.ReadConfig()
 
 	if err != nil {
@@ -49,11 +47,6 @@ func main() {
 		printUsage()
 		os.Exit(1)
 	}
-
-	logger.Infof("配置加载成功:")
-	logger.Infof("  用户文件: %s", cfg.UsersFile)
-	logger.Infof("  密码文件: %s", cfg.PasswordsFile)
-	logger.Infof("  请求体: %s", cfg.RequestBody)
 
 	if cfg.Delay > 0 {
 		logger.Infof("  请求间隔: %d秒", cfg.Delay)
