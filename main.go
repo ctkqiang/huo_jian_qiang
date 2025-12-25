@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"huo_jian_qiang/cmd"
 	"huo_jian_qiang/internal/constant"
 	"huo_jian_qiang/internal/download"
@@ -102,5 +103,9 @@ func printUsage() {
 
 func startProcessing(cfg *cmd.Config) {
 	logger.Infof("开始处理...")
+	// http.PostRequest(
+
+	// )
+
 	logger.Infof("处理完成！")
 }

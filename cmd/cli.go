@@ -4,9 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"huo_jian_qiang/internal/logger"
+	"huo_jian_qiang/internal/warning"
 )
 
 type Config struct {
+	Url           string
 	UsersFile     string
 	PasswordsFile string
 	RequestBody   string
@@ -16,6 +18,7 @@ type Config struct {
 
 func ReadConfig() (*Config, error) {
 	cfg := &Config{}
+	flag.StringVar(&cfg.Url, "url", "", "目标URL(必填)")
 	flag.StringVar(&cfg.UsersFile, "u", "", "包含用户名的文件(必填)")
 	flag.StringVar(&cfg.PasswordsFile, "p", "", "包含密码的文件(必填)")
 	flag.StringVar(&cfg.RequestBody, "a", "", "附加用户输入(必填)")
@@ -23,6 +26,14 @@ func ReadConfig() (*Config, error) {
 	flag.IntVar(&cfg.Threads, "t", 0, "线程数")
 
 	flag.Parse()
+
+	if cfg.Url == "" {
+		return nil, fmt.Errorf("缺少必填参数：-url (目标URL)")
+	}
+
+	if _, err := warning.DisplayWarning(cfg.Url); err != nil {
+		return nil, err
+	}
 
 	if cfg.UsersFile == "" {
 		return nil, fmt.Errorf("缺少必填参数：-u (用户名字段文件)")
