@@ -21,6 +21,8 @@ func PostRequest(basedUrl, body string, timeout int) (string, int, error) {
 
 	request.Header.Set("Accept", "*/*")
 	request.Header.Set("User-Agent", "Mozilla/5.0")
+	request.Header.Set("Accept-Encoding", "gzip, deflate, br")
+	request.Header.Set("Connection", "open")
 
 	resp, err := client.Do(request)
 	if err != nil {
