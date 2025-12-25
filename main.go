@@ -29,7 +29,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Infof("✅ 密码文件已下载: %s", localPath)
+	logger.Infof("密码文件已下载: %s", localPath)
 
 	if err != nil {
 		logger.Errorf("下载出错: %v", err)
