@@ -49,10 +49,11 @@ func ReadConfig() (*Config, error) {
 
 	defaultFilr, _ := getDefaultFileName(cfg.UsersFile)
 
-	logger.Infof("Users File:    %s", defaultFilr)
-	logger.Infof("Request Body:  %s", cfg.RequestBody)
-	logger.Infof("Threads:       %d", cfg.Threads)
-	logger.Infof("Delay:         %d", cfg.Delay)
+	logger.Infof("链接:           %s", cfg.Url)
+	logger.Infof("用户文件:      %s", defaultFilr)
+	logger.Infof("请求体:        %s", cfg.RequestBody)
+	logger.Infof("线程数:        %d", cfg.Threads)
+	logger.Infof("延迟:          %d", cfg.Delay)
 
 	return cfg, nil
 }
