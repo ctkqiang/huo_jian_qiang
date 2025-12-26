@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"huo_jian_qiang/internal/logger"
 	"io"
 	"net/http"
 	"strings"
@@ -9,11 +10,13 @@ import (
 )
 
 func PostRequest(basedUrl, body string, timeout int) (string, int, error) {
-	fullURL, _ := buildURL(basedUrl, "")
+	if !strings.HasPrefix(basedUrl, "http://") && !strings.HasPrefix(basedUrl, "https://") {
+		return "", 0, fmt.Errorf("URL格式错误：必须以http://或https://开头")
+	}
 
 	client := createHTTPClient(timeout)
 
-	request, err := http.NewRequest("POST", fullURL, strings.NewReader(body))
+	request, err := http.NewRequest("POST", basedUrl, strings.NewReader(body))
 
 	if err != nil {
 		return "", 0, fmt.Errorf("创建请求失败: %v", err)
@@ -39,6 +42,10 @@ func PostRequest(basedUrl, body string, timeout int) (string, int, error) {
 			return "", 0, fmt.Errorf("不支持的协议方案或链接不存在")
 		}
 
+		if strings.Contains(err.Error(), "connection reset by peer") {
+			return "", 0, fmt.Errorf("服务器已关闭")
+		}
+
 		return "", 0, fmt.Errorf("发送请求失败: %v", err)
 	}
 	defer resp.Body.Close()
@@ -47,6 +54,46 @@ func PostRequest(basedUrl, body string, timeout int) (string, int, error) {
 
 	if err != nil {
 		return "", resp.StatusCode, fmt.Errorf("读取响应失败: %v", err)
+	}
+
+	switch resp.StatusCode {
+
+	case 400:
+	case 403:
+		logger.Warnf("请求被限制，响应体: %s", string(bodyBytes))
+	case 429:
+		logger.Warnf("收到429状态码, 请求被限制, 建议增加延迟后重试")
+	case 200:
+	case 201:
+		logger.Infof("请求成功！")
+		logger.Infof("状态码：%d", resp.StatusCode)
+		logger.Infof("响应长度：%d 字节", len(bodyBytes))
+
+		if len(body) > 0 {
+			logger.Infof("    响应体预览：")
+
+			previewLength := 300
+
+			if len(body) < previewLength {
+				previewLength = len(body)
+			}
+
+			preview := body[:previewLength]
+
+			preview = strings.ReplaceAll(preview, "\n", "↲ ")
+			preview = strings.ReplaceAll(preview, "\r", "")
+
+			logger.Infof("   ┌──────────────────────────────────────")
+			logger.Infof("   │ %s", preview)
+
+			if len(body) > previewLength {
+				logger.Infof("   │ ... (还有 %d 个字符)", len(body)-previewLength)
+			}
+
+			logger.Infof("   └──────────────────────────────────────")
+		}
+	default:
+		logger.Infof("   └──────────────────────────────────────")
 	}
 
 	responseBody := string(bodyBytes)

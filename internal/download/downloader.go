@@ -104,7 +104,7 @@ func CreateUsersTxt(dir string) error {
 		"ansible", "vagrant", "ec2-user", "azureuser", "core",
 	}
 
-	dataDir := filepath.Join(dir, "data")
+	dataDir := filepath.Join(dir, "downloads/data")
 
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
 		return err

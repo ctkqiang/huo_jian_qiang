@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"huo_jian_qiang/internal/logger"
 	"huo_jian_qiang/internal/warning"
+	"strings"
 )
 
 type Config struct {
@@ -12,9 +13,9 @@ type Config struct {
 	UsersFile     string
 	PasswordsFile string
 	RequestBody   string
-	Method        string
 	Delay         int
 	Threads       int
+	Method        string
 }
 
 func ReadConfig() (*Config, error) {
@@ -53,10 +54,12 @@ func ReadConfig() (*Config, error) {
 		return nil, fmt.Errorf("缺少必填参数：-m(请求方法) [GET/POST/PUT]")
 	}
 
-	defaultFilr, _ := getDefaultFileName(cfg.UsersFile)
+	cfg.UsersFile = getDefaultFileName(cfg.UsersFile)
+	cfg.PasswordsFile = getDefaultFileName(cfg.PasswordsFile)
 
 	logger.Infof("┌─ 链接:         %s", cfg.Url)
-	logger.Infof("├─ 用户文件:      %s", defaultFilr)
+	logger.Infof("├─ 用户文件:      %s", cfg.UsersFile)
+	logger.Infof("├─ 密码文件:      %s", cfg.PasswordsFile)
 	logger.Infof("├─ 请求体:        %s", cfg.RequestBody)
 	logger.Infof("├─ 线程数:        %d", cfg.Threads)
 	logger.Infof("├─ 请求方法:      %s", cfg.Method)
@@ -65,14 +68,17 @@ func ReadConfig() (*Config, error) {
 	return cfg, nil
 }
 
-func getDefaultFileName(user_input string) (string, error) {
+func getDefaultFileName(user_input string) string {
+	directory := "downloads/data/"
+	user_input = strings.TrimSpace(user_input)
+
 	if user_input == "*U*" {
-		return "data/users.txt", nil
+		return directory + "users.txt"
 	}
 
 	if user_input == "*P*" {
-		return "data/passwords.txt", nil
+		return directory + "rockyou.txt"
 	}
 
-	return user_input, nil
+	return user_input
 }
