@@ -6,6 +6,7 @@ import (
 	"huo_jian_qiang/cmd"
 	"huo_jian_qiang/internal/constant"
 	"huo_jian_qiang/internal/download"
+	"huo_jian_qiang/internal/http"
 	"huo_jian_qiang/internal/logger"
 	"os"
 )
@@ -47,14 +48,6 @@ func main() {
 		logger.Errorf("配置读取失败: %v", err)
 		printUsage()
 		os.Exit(1)
-	}
-
-	if cfg.Delay > 0 {
-		logger.Infof("  请求间隔: %d秒", cfg.Delay)
-	}
-
-	if cfg.Threads > 0 {
-		logger.Infof("  线程数: %d", cfg.Threads)
 	}
 
 	startProcessing(cfg)
@@ -102,10 +95,21 @@ func printUsage() {
 }
 
 func startProcessing(cfg *cmd.Config) {
-	logger.Infof("开始处理...")
-	// http.PostRequest(
+	logger.Infof("-> 开始处理...")
 
-	// )
+	response, status, err := http.PostRequest(cfg.Url, cfg.RequestBody, cfg.Delay)
 
-	logger.Infof("处理完成！")
+	if err != nil {
+		logger.Errorf("-> 请求出错: %v", err)
+		return
+	}
+
+	if status != 200 {
+		logger.Errorf("请求失败: 状态码 %d", status)
+		return
+	}
+
+	logger.Infof("-> 响应: %s", response)
+
+	logger.Infof("-> 处理完成！")
 }

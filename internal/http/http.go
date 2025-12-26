@@ -22,10 +22,23 @@ func PostRequest(basedUrl, body string, timeout int) (string, int, error) {
 	request.Header.Set("Accept", "*/*")
 	request.Header.Set("User-Agent", "Mozilla/5.0")
 	request.Header.Set("Accept-Encoding", "gzip, deflate, br")
-	request.Header.Set("Connection", "open")
+	request.Header.Set("Connection", "keep-alive")
 
 	resp, err := client.Do(request)
+
 	if err != nil {
+		if err == io.EOF {
+			return "", 0, fmt.Errorf("服务器已关闭")
+		}
+
+		if strings.Contains(err.Error(), "timeout") {
+			return "", 0, fmt.Errorf("请求超时")
+		}
+
+		if strings.Contains(err.Error(), "unsupported protocol scheme") {
+			return "", 0, fmt.Errorf("不支持的协议方案或链接不存在")
+		}
+
 		return "", 0, fmt.Errorf("发送请求失败: %v", err)
 	}
 	defer resp.Body.Close()
