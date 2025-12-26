@@ -57,7 +57,9 @@ func PostRequest(basedUrl, body string, timeout int) (string, int, error) {
 	}
 
 	switch resp.StatusCode {
-
+	case 504:
+	case 408:
+		logger.Warnf("请求超时，响应体: %s", string(bodyBytes))
 	case 400:
 	case 403:
 		logger.Warnf("请求被限制，响应体: %s", string(bodyBytes))
