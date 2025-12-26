@@ -3,6 +3,7 @@ package http
 import (
 	"fmt"
 	"huo_jian_qiang/internal/logger"
+	"huo_jian_qiang/internal/warning"
 	"io"
 	"net/http"
 	"strings"
@@ -12,6 +13,13 @@ import (
 func PostRequest(basedUrl, body string, timeout int) (string, int, error) {
 	if !strings.HasPrefix(basedUrl, "http://") && !strings.HasPrefix(basedUrl, "https://") {
 		return "", 0, fmt.Errorf("URL格式错误：必须以http://或https://开头")
+	}
+
+	if strings.Contains(basedUrl, ".gov.cn") {
+		warningMsg, err := warning.DisplayWarning(basedUrl)
+		if err != nil {
+			return "", 0, fmt.Errorf("gov.cn 访问警告: %s", warningMsg)
+		}
 	}
 
 	client := createHTTPClient(timeout)
