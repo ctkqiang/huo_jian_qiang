@@ -1,0 +1,119 @@
+@startuml huojianqiang_sequence
+title 火箭枪核心执行流程 - 批量HTTP请求测试
+
+skinparam ParticipantPadding 20
+skinparam BoxPadding 20
+
+actor 用户 as User
+participant "main.go\n主程序" as Main
+participant "cli.go\n配置解析" as CLI
+participant "downloader.go\n文件下载" as Downloader
+participant "文件系统" as Filesystem
+participant "http.go\nHTTP客户端" as HttpClient
+participant "目标服务器" as TargetServer
+participant "logger\n日志系统" as Logger
+
+box "初始化阶段" #LightBlue
+User -> Main: 执行命令行\n参数传入
+activate Main
+
+Main -> CLI: ReadConfig()
+activate CLI
+CLI --> Main: 返回Config对象
+deactivate CLI
+
+Main -> Downloader: PasswordDownloader("downloads")
+activate Downloader
+Downloader -> Filesystem: 创建downloads/data目录
+Filesystem --> Downloader: 目录创建成功
+
+Main -> Downloader: DownloadFile(rockyou.txt URL)
+Downloader -> TargetServer: HTTP GET 下载请求
+activate TargetServer
+TargetServer --> Downloader: 返回文件内容
+deactivate TargetServer
+Downloader -> Filesystem: 保存为downloads/data/rockyou.txt
+Filesystem --> Downloader: 文件保存成功
+Downloader --> Main: 返回文件路径
+
+Main -> Downloader: CreateUsersTxt(".")
+Downloader -> Filesystem: 创建data/users.txt
+Filesystem --> Downloader: 文件创建成功
+Downloader --> Main: 返回成功状态
+deactivate Downloader
+end box
+
+box "配置展示阶段" #LightGreen
+Main -> Logger: 显示配置摘要
+activate Logger
+Logger --> User: 打印配置信息\n(URL/文件/参数等)
+deactivate Logger
+end box
+
+box "批量处理阶段" #LightYellow
+activate Main
+Main -> Main: processFiles(cfg)
+
+loop 对每个用户行
+    loop 对每个密码行
+        Main -> Main: 启动工作协程
+        activate Main #LightYellow
+        
+        Main -> Main: processRequest(cfg, user, pass)
+        Main -> Main: 替换模板变量\n{user}→实际用户\n{pass}→实际密码
+        
+        alt POST请求
+            Main -> HttpClient: PostRequest(url, body, 30)
+            activate HttpClient
+            HttpClient -> TargetServer: HTTP POST
+            activate TargetServer
+            TargetServer --> HttpClient: 返回响应
+            deactivate TargetServer
+            HttpClient --> Main: (响应, 状态码, 错误)
+            deactivate HttpClient
+        else GET请求
+            Main -> HttpClient: GetRequest(url, param, 30)
+            activate HttpClient
+            HttpClient -> TargetServer: HTTP GET
+            activate TargetServer
+            TargetServer --> HttpClient: 返回响应
+            deactivate TargetServer
+            HttpClient --> Main: (响应, 状态码, 错误)
+            deactivate HttpClient
+        end
+        
+        Main -> Logger: 记录请求结果
+        activate Logger
+        
+        alt 状态码=200
+            Logger --> User: 请求成功！\n状态码/长度/预览
+        else 状态码=429
+            Logger --> User: 请求受限！\n建议增加延迟
+        else 其他状态码
+            Logger --> User: [信息] 请求完成\n状态码=X
+        end
+        deactivate Logger
+        
+        alt cfg.Delay>0
+            Main -> Main: 应用延迟控制\n等待cfg.Delay秒
+        end
+        
+        deactivate Main #LightYellow
+    end
+end
+
+Main -> Main: 等待所有协程完成\n(wg.Wait())
+deactivate Main
+end box
+
+box "完成阶段" #LightGray
+Main -> Logger: 输出处理完成信息
+activate Logger
+Logger --> User: 显示最终统计结果
+deactivate Logger
+
+Main --> User: 程序退出
+deactivate Main
+end box
+
+@enduml
