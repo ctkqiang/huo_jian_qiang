@@ -1,5 +1,5 @@
 @startuml huojianqiang_sequence
-title 火箭枪核心执行流程 - 批量HTTP请求测试
+title 火尖枪核心执行流程 - 批量HTTP请求测试
 
 skinparam ParticipantPadding 20
 skinparam BoxPadding 20
