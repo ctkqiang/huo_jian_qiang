@@ -1,0 +1,93 @@
+stages:
+  - build
+  - release
+
+variables:
+  GO_VERSION: "1.21"
+
+.build-go-binaries:
+  stage: build
+  image: golang:$GO_VERSION-alpine
+  script:
+    - mkdir -p dist
+    # Linux (x64, x86)
+    - GOOS=linux GOARCH=amd64 go build -o dist/huojianqiang-linux-amd64 .
+    - GOOS=linux GOARCH=386 go build -o dist/huojianqiang-linux-386 .
+    # Windows (x64, x86)
+    - GOOS=windows GOARCH=amd64 go build -o dist/huojianqiang-windows-amd64.exe .
+    - GOOS=windows GOARCH=386 go build -o dist/huojianqiang-windows-386.exe .
+    # FreeBSD (x64, x86)
+    - GOOS=freebsd GOARCH=amd64 go build -o dist/huojianqiang-freebsd-amd64 .
+    - GOOS=freebsd GOARCH=386 go build -o dist/huojianqiang-freebsd-386 .
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 week
+  only:
+    - tags
+  tags:
+    - docker
+
+create-release:
+  stage: release
+  image: alpine:latest
+  needs: ["build-go-binaries"]
+  script:
+    - |
+      # 创建发布版
+      echo "创建发布版 $CI_COMMIT_TAG"
+      
+      # 获取变更日志（如果有 CHANGELOG.md 文件）
+      CHANGELOG=""
+      if [ -f "CHANGELOG.md" ]; then
+        # 这里可以提取特定版本的变更日志
+        CHANGELOG=$(cat CHANGELOG.md | head -50)
+      fi
+      
+      # 使用 GitLab API 创建发布
+      curl --header "Content-Type: application/json" \
+           --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+           --data "{
+             \"name\": \"Release $CI_COMMIT_TAG\",
+             \"tag_name\": \"$CI_COMMIT_TAG\",
+             \"description\": \"$CHANGELOG\",
+             \"assets\": {
+               \"links\": [
+                 {
+                   \"name\": \"huojianqiang-linux-amd64\",
+                   \"url\": \"${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dist/huojianqiang-linux-amd64\",
+                   \"filepath\": \"/dist/huojianqiang-linux-amd64\"
+                 },
+                 {
+                   \"name\": \"huojianqiang-linux-386\",
+                   \"url\": \"${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dist/huojianqiang-linux-386\",
+                   \"filepath\": \"/dist/huojianqiang-linux-386\"
+                 },
+                 {
+                   \"name\": \"huojianqiang-windows-amd64.exe\",
+                   \"url\": \"${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dist/huojianqiang-windows-amd64.exe\",
+                   \"filepath\": \"/dist/huojianqiang-windows-amd64.exe\"
+                 },
+                 {
+                   \"name\": \"huojianqiang-windows-386.exe\",
+                   \"url\": \"${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dist/huojianqiang-windows-386.exe\",
+                   \"filepath\": \"/dist/huojianqiang-windows-386.exe\"
+                 },
+                 {
+                   \"name\": \"huojianqiang-freebsd-amd64\",
+                   \"url\": \"${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dist/huojianqiang-freebsd-amd64\",
+                   \"filepath\": \"/dist/huojianqiang-freebsd-amd64\"
+                 },
+                 {
+                   \"name\": \"huojianqiang-freebsd-386\",
+                   \"url\": \"${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dist/huojianqiang-freebsd-386\",
+                   \"filepath\": \"/dist/huojianqiang-freebsd-386\"
+                 }
+               ]
+             }
+           }" \
+           "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/releases"
+  only:
+    - tags
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v/
