@@ -12,6 +12,7 @@ type Config struct {
 	UsersFile     string
 	PasswordsFile string
 	RequestBody   string
+	Method        string
 	Delay         int
 	Threads       int
 }
@@ -24,6 +25,7 @@ func ReadConfig() (*Config, error) {
 	flag.StringVar(&cfg.RequestBody, "a", "", "附加用户输入(必填)")
 	flag.IntVar(&cfg.Delay, "d", 0, "请求间隔(秒)")
 	flag.IntVar(&cfg.Threads, "t", 0, "线程数")
+	flag.StringVar(&cfg.Method, "m", "GET", "请求方法(GET/POST)")
 
 	flag.Parse()
 
@@ -47,12 +49,17 @@ func ReadConfig() (*Config, error) {
 		return nil, fmt.Errorf("缺少必填参数：-a(附加用户输入)")
 	}
 
+	if cfg.Method == "" {
+		return nil, fmt.Errorf("缺少必填参数：-m(请求方法) [GET/POST/PUT]")
+	}
+
 	defaultFilr, _ := getDefaultFileName(cfg.UsersFile)
 
 	logger.Infof("┌─ 链接:         %s", cfg.Url)
 	logger.Infof("├─ 用户文件:      %s", defaultFilr)
 	logger.Infof("├─ 请求体:        %s", cfg.RequestBody)
 	logger.Infof("├─ 线程数:        %d", cfg.Threads)
+	logger.Infof("├─ 请求方法:      %s", cfg.Method)
 	logger.Infof("└─ 延迟:          %d 秒", cfg.Delay)
 
 	return cfg, nil

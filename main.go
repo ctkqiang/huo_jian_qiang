@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"huo_jian_qiang/cmd"
 	"huo_jian_qiang/internal/constant"
@@ -97,19 +98,39 @@ func printUsage() {
 func startProcessing(cfg *cmd.Config) {
 	logger.Infof("-> 开始处理...")
 
-	response, status, err := http.PostRequest(cfg.Url, cfg.RequestBody, cfg.Delay)
+	method := strings.ToUpper(cfg.Method)
 
-	if err != nil {
-		logger.Errorf("-> 请求出错: %v", err)
-		return
+	switch method {
+	case "POST":
+		response, status, err := http.PostRequest(cfg.Url, cfg.RequestBody, cfg.Delay)
+
+		if err != nil {
+			logger.Errorf("-> 请求出错: %v", err)
+			return
+		}
+
+		if status != 200 {
+			logger.Errorf("请求失败: 状态码 %d", status)
+			return
+		}
+
+		logger.Infof("-> 响应: %s", response)
+
+	case "GET":
+		response, status, err := http.GetRequest(cfg.Url, cfg.UsersFile, cfg.Delay)
+
+		if err != nil {
+			logger.Errorf("-> 请求出错: %v", err)
+			return
+		}
+
+		if status != 200 {
+			logger.Errorf("请求失败: 状态码 %d", status)
+			return
+		}
+
+		logger.Infof("-> 响应: %s", response)
 	}
-
-	if status != 200 {
-		logger.Errorf("请求失败: 状态码 %d", status)
-		return
-	}
-
-	logger.Infof("-> 响应: %s", response)
 
 	logger.Infof("-> 处理完成！")
 }
