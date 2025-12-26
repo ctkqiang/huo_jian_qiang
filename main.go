@@ -6,6 +6,7 @@ import (
 	"huo_jian_qiang/cmd"
 	"huo_jian_qiang/internal/download"
 	"huo_jian_qiang/internal/logger"
+	"huo_jian_qiang/internal/warning"
 	"os"
 	"strings"
 	"sync"
@@ -35,8 +36,24 @@ func main() {
 
 	logger.Infof("-> 开始处理...")
 
+	if strings.Contains(cfg.Url, ".gov.cn") {
+		warningMsg, err := warning.DisplayWarning(cfg.Url)
+
+		if err != nil {
+			logger.Errorf("%s", warningMsg)
+			os.Exit(0)
+		}
+	}
+
 	if err := processFiles(cfg); err != nil {
+
+		if strings.Contains(err.Error(), "no such file or directory") {
+			logger.Errorf("用户文件不存在")
+			return
+		}
+
 		logger.Errorf("处理文件失败: %v", err)
+
 		return
 	}
 }
