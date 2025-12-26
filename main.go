@@ -133,5 +133,5 @@ func processRequest(cfg *cmd.Config, user, password string) {
 		return
 	}
 
-	logger.Infof("-> 请求成功: 状态码=%d, 响应长度=%d", statusCode, len(response))
+	logger.Infof("收到[%d]状态码, %s, 响应长度=%d", statusCode, requestBody, len(response))
 }
