@@ -87,7 +87,7 @@
 
 ```bash
 go run main.go \
-  --url "https://zuscoffee.com/wp-login.php" \
+  --url "https://xxxx.xxxxxxxx" \
   -m "POST" \
   -u "*U*" \
   -p "*P*" \
@@ -106,7 +106,7 @@ go run main.go \
 
 2. **文件处理阶段**
 ```bash
-   19:39:10 【火尖枪】: [信息] ┌─ 链接:         https://zuscoffee.com/wp-login.php
+   19:39:10 【火尖枪】: [信息] ┌─ 链接:         https://xxxxxxxxxxxx/xxxxx
    19:39:10 【火尖枪】: [信息] ├─ 用户文件:      downloads/data/users.txt
    19:39:10 【火尖枪】: [信息] ├─ 密码文件:      downloads/data/rockyou.txt
    19:39:10 【火尖枪】: [信息] ├─ 请求体:        username={user}&password={pass}
