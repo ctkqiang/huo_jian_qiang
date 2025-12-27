@@ -29,6 +29,8 @@ func PostRequest(basedUrl, body string, timeout int) (string, int, error) {
 	request.Header.Set("Connection", "keep-alive")
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
+	logger.Infof("发送POST请求: URL=%s, 内容长度=%d, Content-Type=%s", basedUrl, len(body), request.Header.Get("Content-Type"))
+
 	resp, err := client.Do(request)
 
 	if err != nil {
