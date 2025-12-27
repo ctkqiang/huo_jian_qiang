@@ -27,6 +27,7 @@ func PostRequest(basedUrl, body string, timeout int) (string, int, error) {
 	request.Header.Set("User-Agent", "Mozilla/5.0")
 	request.Header.Set("Accept-Encoding", "gzip, deflate, br")
 	request.Header.Set("Connection", "keep-alive")
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := client.Do(request)
 
@@ -59,11 +60,13 @@ func PostRequest(basedUrl, body string, timeout int) (string, int, error) {
 
 	switch resp.StatusCode {
 	case 504:
+		logger.Warnf("网关超时 | 状态码: %d", resp.StatusCode)
 	case 408:
 		logger.Warnf("请求超时 | 响应体: %s", string(bodyBytes))
 	case 400:
+		logger.Warnf("请求错误 | 状态码: %d", resp.StatusCode)
 	case 403:
-		logger.Warnf("请求被限制 |  [%d]", 403)
+		logger.Warnf("请求被限制 | 状态码: %d", resp.StatusCode)
 	case 429:
 		logger.Warnf("收到[429]状态码 | 请求被限制, 建议增加延迟后重试")
 	case 200:
