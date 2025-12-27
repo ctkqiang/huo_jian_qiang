@@ -63,7 +63,7 @@ func PostRequest(basedUrl, body string, timeout int) (string, int, error) {
 		logger.Warnf("请求超时 | 响应体: %s", string(bodyBytes))
 	case 400:
 	case 403:
-		logger.Warnf("请求被限制 | 响应体: %s", string(bodyBytes))
+		logger.Warnf("请求被限制 |  [%d]", 403)
 	case 429:
 		logger.Warnf("收到[429]状态码 | 请求被限制, 建议增加延迟后重试")
 	case 200:
