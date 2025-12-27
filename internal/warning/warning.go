@@ -2,6 +2,7 @@ package warning
 
 import (
 	"fmt"
+	"net"
 	"strings"
 )
 
@@ -19,4 +20,24 @@ func DisplayWarning(domain string) (string, error) {
 	}
 
 	return "", nil
+}
+
+func GetIP(url string) (string, string, error) {
+	var ipv4 string
+	var ipv6 string
+	ip, err := net.LookupIP(url)
+
+	if err != nil {
+		return "", "", fmt.Errorf("解析域名失败: %v", err)
+	}
+
+	for _, _ip := range ip {
+		if _ip.To4() != nil {
+			ipv4 = _ip.String()
+		} else {
+			ipv6 = _ip.String()
+		}
+	}
+
+	return ipv4, ipv6, nil
 }

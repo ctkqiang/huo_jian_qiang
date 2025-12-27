@@ -20,26 +20,30 @@ const (
 	WARN
 	ERROR
 	FATAL
+	HIGHLIGHT // 高亮级别，优先级高于 INFO
 )
 
 var (
 	levelStrings = map[LogLevel]string{
-		DEBUG: "调试",
-		INFO:  "信息",
-		WARN:  "警告",
-		ERROR: "错误",
-		FATAL: "致命",
+		DEBUG:     "调试",
+		INFO:      "信息",
+		WARN:      "警告",
+		ERROR:     "错误",
+		FATAL:     "致命",
+		HIGHLIGHT: "重点",
 	}
 
 	levelColors = map[LogLevel]string{
-		DEBUG: "\033[36m", // 青色
-		INFO:  "\033[32m", // 绿色
-		WARN:  "\033[33m", // 黄色
-		ERROR: "\033[31m", // 红色
-		FATAL: "\033[35m", // 洋红
+		DEBUG:     "\033[36m",      // 青色
+		INFO:      "\033[32m",      // 绿色
+		WARN:      "\033[33m",      // 黄色
+		ERROR:     "\033[31m",      // 红色
+		FATAL:     "\033[35m",      // 洋红
+		HIGHLIGHT: "\033[1;97;45m", // 粗体+亮白字+紫色背景
 	}
 
 	resetColor = "\033[0m"
+	boldText   = "\033[1m"
 )
 
 type Logger struct {
@@ -115,6 +119,11 @@ func (l *Logger) Info(format string, v ...interface{}) {
 	l.log(INFO, format, v...)
 }
 
+// Highlight 记录高亮醒目的消息
+func (l *Logger) Highlight(format string, v ...interface{}) {
+	l.log(HIGHLIGHT, format, v...)
+}
+
 // Warn 记录警告消息
 func (l *Logger) Warn(format string, v ...interface{}) {
 	l.log(WARN, format, v...)
@@ -131,9 +140,10 @@ func (l *Logger) Fatal(format string, v ...interface{}) {
 	os.Exit(1)
 }
 
-// log 是内部日志记录方法
+// log 是内部日志记录核心方法
 func (l *Logger) log(level LogLevel, format string, v ...interface{}) {
-	if level < l.minLevel {
+	// 高亮消息不受普通级别限制，除非级别设定高于 HIGHLIGHT
+	if level < l.minLevel && level != HIGHLIGHT {
 		return
 	}
 
@@ -142,13 +152,13 @@ func (l *Logger) log(level LogLevel, format string, v ...interface{}) {
 
 	var builder strings.Builder
 
-	// 添加时间戳
+	// 1. 添加时间戳
 	if l.showTime {
 		builder.WriteString(time.Now().Format(l.timeFormat))
 		builder.WriteString(" ")
 	}
 
-	// 添加应用名称
+	// 2. 添加应用名称
 	if l.appName != "" {
 		builder.WriteString("【")
 		builder.WriteString(l.appName)
@@ -156,10 +166,14 @@ func (l *Logger) log(level LogLevel, format string, v ...interface{}) {
 		builder.WriteString(": ")
 	}
 
-	// 添加带颜色的日志级别
+	// 3. 添加带颜色的日志级别
 	levelStr := levelStrings[level]
-	if l.colors && levelColors[level] != "" {
-		builder.WriteString(l.colorize(levelStr, level))
+	if l.colors {
+		builder.WriteString(levelColors[level])
+		builder.WriteString("[")
+		builder.WriteString(levelStr)
+		builder.WriteString("]")
+		builder.WriteString(resetColor)
 	} else {
 		builder.WriteString("[")
 		builder.WriteString(levelStr)
@@ -167,34 +181,31 @@ func (l *Logger) log(level LogLevel, format string, v ...interface{}) {
 	}
 	builder.WriteString(" ")
 
-	// 添加调用者信息（文件:行号）
+	// 4. 添加调用者信息
 	if l.callerInfo && (level == DEBUG || level == ERROR || level == FATAL) {
 		if pc, file, line, ok := runtime.Caller(2); ok {
 			funcName := runtime.FuncForPC(pc).Name()
-			// 仅提取文件名，不包含完整路径
 			segments := strings.Split(file, "/")
 			filename := segments[len(segments)-1]
 			builder.WriteString(fmt.Sprintf("(%s:%d %s) ", filename, line, funcName))
 		}
 	}
 
-	// 添加消息
+	// 5. 添加消息内容
 	message := fmt.Sprintf(format, v...)
-	builder.WriteString(message)
+	if level == HIGHLIGHT && l.colors {
+		// 高亮级别的正文额外加粗
+		builder.WriteString(boldText)
+		builder.WriteString(message)
+		builder.WriteString(resetColor)
+	} else {
+		builder.WriteString(message)
+	}
 
-	// 添加换行符
 	builder.WriteString("\n")
 
 	// 写入输出
 	fmt.Fprint(l.output, builder.String())
-}
-
-// colorize 为日志级别字符串添加颜色
-func (l *Logger) colorize(text string, level LogLevel) string {
-	if !l.colors {
-		return "[" + text + "]"
-	}
-	return levelColors[level] + "[" + text + "]" + resetColor
 }
 
 // SetLevel 修改最低日志级别
@@ -225,31 +236,18 @@ func (l *Logger) EnableColors() {
 	l.colors = true
 }
 
-// 一行初始化辅助函数
-func Debugf(format string, v ...interface{}) {
-	defaultLogger.Debug(format, v...)
-}
-
-func Infof(format string, v ...interface{}) {
-	defaultLogger.Info(format, v...)
-}
-
-func Warnf(format string, v ...interface{}) {
-	defaultLogger.Warn(format, v...)
-}
-
-func Errorf(format string, v ...interface{}) {
-	defaultLogger.Error(format, v...)
-}
-
-func Fatalf(format string, v ...interface{}) {
-	defaultLogger.Fatal(format, v...)
-}
-
-// 全局默认日志记录器
+// 全局默认实例指针
 var defaultLogger = Default("火尖枪")
 
-// InitDefault 设置全局日志记录器
+// 全局辅助函数
+func Debugf(format string, v ...interface{})     { defaultLogger.Debug(format, v...) }
+func Infof(format string, v ...interface{})      { defaultLogger.Info(format, v...) }
+func Warnf(format string, v ...interface{})      { defaultLogger.Warn(format, v...) }
+func Errorf(format string, v ...interface{})     { defaultLogger.Error(format, v...) }
+func Fatalf(format string, v ...interface{})     { defaultLogger.Fatal(format, v...) }
+func Highlightf(format string, v ...interface{}) { defaultLogger.Highlight(format, v...) }
+
+// InitDefault 重新初始化全局日志记录器
 func InitDefault(appName string, minLevel LogLevel) {
 	defaultLogger = New(Config{
 		AppName:    appName,
@@ -262,13 +260,14 @@ func InitDefault(appName string, minLevel LogLevel) {
 	})
 }
 
-// StringToLevel 将字符串转换为日志级别
 func StringToLevel(level string) LogLevel {
 	switch strings.ToUpper(level) {
 	case "DEBUG":
 		return DEBUG
 	case "INFO":
 		return INFO
+	case "HIGHLIGHT":
+		return HIGHLIGHT
 	case "WARN", "WARNING":
 		return WARN
 	case "ERROR":
@@ -278,12 +277,4 @@ func StringToLevel(level string) LogLevel {
 	default:
 		return INFO
 	}
-}
-
-// LevelToString 将日志级别转换为字符串
-func LevelToString(level LogLevel) string {
-	if str, ok := levelStrings[level]; ok {
-		return str
-	}
-	return "未知"
 }

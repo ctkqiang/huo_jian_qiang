@@ -133,5 +133,10 @@ func processRequest(cfg *cmd.Config, user, password string) {
 		return
 	}
 
-	logger.Infof("收到[%d]状态码, %s, 响应长度=%d", statusCode, requestBody, len(response))
+	if statusCode == 200 {
+		logger.Highlightf("[收到[%d]状态码, %s, 响应长度=%d <-------------- %s]", statusCode, requestBody, len(response), "[这可能是凭据]")
+	} else {
+		logger.Infof("收到[%d]状态码, %s, 响应长度=%d", statusCode, requestBody, len(response))
+	}
+
 }

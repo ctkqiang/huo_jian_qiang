@@ -3,6 +3,7 @@ package http
 import (
 	"fmt"
 	"huo_jian_qiang/internal/logger"
+	"huo_jian_qiang/internal/warning"
 	"io"
 	"net/http"
 	"strings"
@@ -147,6 +148,14 @@ func buildURL(baseURL, paramA string) (string, error) {
 	if strings.Contains(baseURL, "?") {
 		return fmt.Sprintf("%s&a=%s", baseURL, paramA), nil
 	}
+
+	ipaddrv4, ipaddrv6, err := warning.GetIP(baseURL)
+
+	if err != nil {
+		return "", fmt.Errorf("解析IP地址失败: %v", err)
+	}
+
+	logger.Infof("地址 %s: IPv4=%s, IPv6=%s", baseURL, ipaddrv4, ipaddrv6)
 
 	return fmt.Sprintf("%s?a=%s", baseURL, paramA), nil
 }
