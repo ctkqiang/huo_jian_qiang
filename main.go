@@ -36,8 +36,8 @@ func main() {
 
 	logger.Infof("-> 开始处理...")
 
-	if strings.Contains(cfg.Url, ".gov.cn") {
-		warningMsg, err := warning.DisplayWarning(cfg.Url)
+	if strings.Contains(cfg.Host, ".gov.cn") {
+		warningMsg, err := warning.DisplayWarning(cfg.Host)
 
 		if err != nil {
 			logger.Errorf("%s", warningMsg)
@@ -45,17 +45,28 @@ func main() {
 		}
 	}
 
-	if err := processFiles(cfg); err != nil {
+	if strings.Contains(cfg.Host, "http") {
+		if err := processFiles(cfg); err != nil {
 
-		if strings.Contains(err.Error(), "no such file or directory") {
-			logger.Errorf("用户文件不存在")
+			if strings.Contains(err.Error(), "no such file or directory") {
+				logger.Errorf("用户文件不存在")
+				return
+			}
+
+			logger.Errorf("处理文件失败: %v", err)
+
 			return
 		}
-
-		logger.Errorf("处理文件失败: %v", err)
-
-		return
 	}
+
+	if strings.Contains(cfg.Host, "mysql") {
+		// if status, err := processMYSQLRequest(user, password); err != nil {
+		// 	logger.Errorf("处理文件失败: %v", err)
+		// } else if status {
+		// 	logger.Highlightf("成功: %s:%s", user, password)
+		// }
+	}
+
 }
 
 // processFiles 是核心的凭证测试处理函数
@@ -174,7 +185,7 @@ func readLines(filename string) ([]string, error) {
 //
 // 参数：
 //
-//	cfg *cmd.Config - 应用程序配置对象，包含URL、请求方法、请求体模板等
+//	cfg *cmd.Config - 应用程序配置对象，包含Host、请求方法、请求体模板等
 //	user string - 当前测试的用户名
 //	password string - 当前测试的密码
 //
@@ -217,9 +228,9 @@ func processRequest(cfg *cmd.Config, user, password string) {
 
 	switch strings.ToUpper(cfg.Method) {
 	case "POST":
-		response, statusCode, err = http.PostRequest(cfg.Url, requestBody, 30)
+		response, statusCode, err = http.PostRequest(cfg.Host, requestBody, 30)
 	case "GET":
-		response, statusCode, err = http.GetRequest(cfg.Url, requestBody, 30)
+		response, statusCode, err = http.GetRequest(cfg.Host, requestBody, 30)
 	default:
 		logger.Errorf("不支持的请求方法: %s", cfg.Method)
 		return
@@ -235,4 +246,8 @@ func processRequest(cfg *cmd.Config, user, password string) {
 	} else {
 		logger.Infof("收到[%d]状态码 | %s | 响应长度=%d", statusCode, requestBody, len(response))
 	}
+}
+
+func processMYSQLRequest(user string, password string) (status bool, err error) {
+	return true, nil
 }

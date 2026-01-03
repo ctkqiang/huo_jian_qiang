@@ -9,7 +9,7 @@ import (
 )
 
 type Config struct {
-	Url           string
+	Host          string
 	UsersFile     string
 	PasswordsFile string
 	RequestBody   string
@@ -20,7 +20,7 @@ type Config struct {
 
 func ReadConfig() (*Config, error) {
 	cfg := &Config{}
-	flag.StringVar(&cfg.Url, "url", "", "目标URL(必填)")
+	flag.StringVar(&cfg.Host, "Host", "", "目标Host(必填) | http://127.0.0.1 | mysql://root:123456@tcp(127.0.0.1:3306)/")
 	flag.StringVar(&cfg.UsersFile, "u", "", "包含用户名的文件(必填)")
 	flag.StringVar(&cfg.PasswordsFile, "p", "", "包含密码的文件(必填)")
 	flag.StringVar(&cfg.RequestBody, "a", "", "附加用户输入(必填)")
@@ -30,11 +30,11 @@ func ReadConfig() (*Config, error) {
 
 	flag.Parse()
 
-	if cfg.Url == "" {
-		return nil, fmt.Errorf("缺少必填参数：-url (目标URL)")
+	if cfg.Host == "" {
+		return nil, fmt.Errorf("缺少必填参数：-Host (目标Host)")
 	}
 
-	if _, err := warning.DisplayWarning(cfg.Url); err != nil {
+	if _, err := warning.DisplayWarning(cfg.Host); err != nil {
 		return nil, err
 	}
 
@@ -57,7 +57,7 @@ func ReadConfig() (*Config, error) {
 	cfg.UsersFile = getDefaultFileName(cfg.UsersFile)
 	cfg.PasswordsFile = getDefaultFileName(cfg.PasswordsFile)
 
-	logger.Infof("┌─ 链接:         %s", cfg.Url)
+	logger.Infof("┌─ 链接:         %s", cfg.Host)
 	logger.Infof("├─ 用户文件:      %s", cfg.UsersFile)
 	logger.Infof("├─ 密码文件:      %s", cfg.PasswordsFile)
 	logger.Infof("├─ 请求体:        %s", cfg.RequestBody)
