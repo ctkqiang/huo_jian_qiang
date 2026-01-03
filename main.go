@@ -6,6 +6,7 @@ import (
 	"huo_jian_qiang/cmd"
 	"huo_jian_qiang/internal/download"
 	"huo_jian_qiang/internal/logger"
+	"huo_jian_qiang/internal/mysql"
 	"huo_jian_qiang/internal/warning"
 	"os"
 	"strings"
@@ -60,11 +61,14 @@ func main() {
 	}
 
 	if strings.Contains(cfg.Host, "mysql") {
-		// if status, err := processMYSQLRequest(user, password); err != nil {
-		// 	logger.Errorf("处理文件失败: %v", err)
-		// } else if status {
-		// 	logger.Highlightf("成功: %s:%s", user, password)
-		// }
+		if err := processMYSQLFiles(cfg); err != nil {
+			if strings.Contains(err.Error(), "no such file or directory") {
+				logger.Errorf("用户文件不存在")
+				return
+			}
+			logger.Errorf("处理文件失败: %v", err)
+			return
+		}
 	}
 
 }
@@ -127,6 +131,59 @@ func processFiles(cfg *cmd.Config) error {
 				}
 
 				processRequest(cfg, u, p)
+			}(user, password)
+		}
+	}
+
+	wg.Wait()
+	return nil
+}
+
+// processMYSQLFiles 处理MySQL凭证测试
+func processMYSQLFiles(cfg *cmd.Config) error {
+	users, err := readLines(cfg.UsersFile)
+	if err != nil {
+		return fmt.Errorf("读取用户文件失败: %v", err)
+	}
+
+	passwords, err := readLines(cfg.PasswordsFile)
+	if err != nil {
+		return fmt.Errorf("读取密码文件失败: %v", err)
+	}
+
+	var wg sync.WaitGroup
+	// 确保至少有一个线程
+	threads := cfg.Threads
+	if threads <= 0 {
+		threads = 1
+	}
+	semaphore := make(chan struct{}, threads)
+
+	for _, user := range users {
+		for _, password := range passwords {
+			wg.Add(1)
+			semaphore <- struct{}{}
+
+			go func(u, p string) {
+				defer wg.Done()
+				defer func() { <-semaphore }()
+
+				if cfg.Delay > 0 {
+					time.Sleep(time.Duration(cfg.Delay) * time.Second)
+				}
+
+				success, err := mysql.AttemptConnect(u, p, cfg.Host)
+				if err != nil {
+					// 仅记录非认证错误
+					// logger.Errorf("MySQL连接错误 [%s:%s]: %v", u, p, err)
+					// 为了保持输出整洁，这里可以选择不输出详细的连接错误，或者使用Debug级别
+				}
+
+				if success {
+					logger.Highlightf("成功: %s:%s", u, p)
+				} else {
+					logger.Infof("失败: %s:%s", u, p)
+				}
 			}(user, password)
 		}
 	}
@@ -246,8 +303,4 @@ func processRequest(cfg *cmd.Config, user, password string) {
 	} else {
 		logger.Infof("收到[%d]状态码 | %s | 响应长度=%d", statusCode, requestBody, len(response))
 	}
-}
-
-func processMYSQLRequest(user string, password string) (status bool, err error) {
-	return true, nil
 }

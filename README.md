@@ -87,7 +87,7 @@
 
 ```bash
 go run main.go \
-  --url "https://xxxx.xxxxxxxx" \
+  --Host "https://xxxx.xxxxxxxx" \
   -m "POST" \
   -u "*U*" \
   -p "*P*" \
@@ -140,13 +140,13 @@ go run main.go \
 
 | 参数名 | 类型 | 必填 | 默认值 | 说明 |
 |--------|------|------|--------|------|
-| `--url` | string | 是 | 无 | 目标URL地址，必须以http://或https://开头 |
-| `-m` | string | 是 | GET | 请求方法：GET/POST |
-| `-u` | string | 是 | 无 | 用户名字段文件，支持特殊标记*U*自动生成 |
-| `-p` | string | 是 | 无 | 密码字段文件，支持特殊标记*P*自动下载 |
-| `-a` | string | 是 | 无 | 请求体模板，支持{user}和{pass}占位符 |
+| `--Host` | string | 是 | 无 | 目标地址，支持HTTP URL(`http://...`)或MySQL DSN(`mysql://...`) |
+| `-m` | string | 是 | GET | 请求方法：GET/POST（MySQL模式下忽略） |
+| `-u` | string | 是 | 无 | 用户名字段文件，支持特殊标记`*U*`自动生成 |
+| `-p` | string | 是 | 无 | 密码字段文件，支持特殊标记`*P*`自动下载 |
+| `-a` | string | 是 | 无 | 请求体模板，支持{user}和{pass}占位符（MySQL模式可填任意值） |
 | `-d` | int | 否 | 0 | 请求间隔时间（秒），用于避免触发限流 |
-| `-t` | int | 否 | 1 | 并发线程数，控制同时执行的请求数量 |
+| `-t` | int | 否 | 1 | 并发线程数，控制同时执行的请求/连接数量 |
 | `--help` | flag | 否 | 无 | 显示帮助信息 |
 
 ### 2.3 请求体模板示例
@@ -181,6 +181,196 @@ admin123
 qwerty
 letmein
 ```
+
+### 2.5 MySQL数据库连接测试
+
+火尖枪支持对MySQL数据库进行用户名和密码的批量测试。当检测到`--Host`参数包含`mysql`关键字时，系统会自动切换到MySQL测试模式。
+
+#### 2.5.1 命令语法示例
+
+```bash
+go run main.go \
+  --Host "mysql://root:123456@tcp(127.0.0.1:3306)/" \
+  -u "*U*" \
+  -p "*P*" \
+  -a "dummy" \
+  -d 1 \
+  -t 10
+```
+
+**参数解释：**
+- `--Host`: MySQL连接字符串，支持标准DSN格式
+- `-u`: 用户名字典文件路径，支持`*U*`自动生成默认文件
+- `-p`: 密码字典文件路径，支持`*P*`自动下载rockyou.txt
+- `-a`: 请求体参数（MySQL模式下可填写任意值，但必须提供）
+- `-d`: 请求间隔时间（秒），避免触发数据库连接限制
+- `-t`: 并发线程数，控制同时建立的数据库连接数量
+
+#### 2.5.2 MySQL连接字符串格式
+
+火尖枪支持多种MySQL连接字符串格式：
+
+**标准DSN格式：**
+```
+mysql://用户名:密码@tcp(主机:端口)/数据库名
+```
+
+**示例：**
+- `mysql://root:password@tcp(localhost:3306)/test`
+- `mysql://admin:admin123@tcp(192.168.1.100:3306)/production`
+- `mysql://user:@tcp(127.0.0.1:3306)/` (空密码)
+- `mysql://:password@tcp(127.0.0.1:3306)/` (空用户名)
+
+**简化格式（自动补全）：**
+- `mysql://127.0.0.1:3306` → 自动转换为 `mysql://root:@tcp(127.0.0.1:3306)/`
+- `mysql://localhost` → 自动转换为 `mysql://root:@tcp(localhost:3306)/`
+
+#### 2.5.3 参数说明参考
+
+MySQL测试使用与HTTP测试相同的命令行参数，详细参数说明请参考[2.2 参数说明](#22-参数说明)章节。
+
+**MySQL测试特别注意事项：**
+- `--Host`参数必须使用MySQL DSN格式（`mysql://...`）
+- `-m`参数在MySQL模式下被忽略，但必须提供
+- `-a`参数在MySQL模式下可填写任意值，但必须提供
+- 建议根据数据库性能合理设置`-t`（线程数）和`-d`（延迟）参数
+
+#### 2.5.4 安全注意事项
+
+1. **合法授权**：仅对拥有合法授权的数据库进行测试，严禁未经授权访问他人数据库
+2. **生产环境**：避免直接在生产数据库上测试，建议使用测试环境或隔离的数据库实例
+3. **连接限制**：合理设置`-d`延迟参数，避免对数据库造成过大压力或触发防火墙规则
+4. **敏感信息**：MySQL连接字符串中包含用户名和密码，避免在日志或公共场合泄露
+5. **网络隔离**：确保测试环境与生产环境网络隔离，防止误操作影响生产服务
+
+#### 2.5.5 环境配置示例
+
+**测试环境配置：**
+```bash
+# 本地MySQL测试
+export MYSQL_HOST="mysql://root:@tcp(localhost:3306)/testdb"
+export USERS_FILE="downloads/data/users.txt"
+export PASSWORDS_FILE="downloads/data/rockyou.txt"
+
+go run main.go \
+  --Host "$MYSQL_HOST" \
+  -u "$USERS_FILE" \
+  -p "$PASSWORDS_FILE" \
+  -a "dummy" \
+  -d 2 \
+  -t 5
+```
+
+**Docker环境测试：**
+```bash
+# 连接Docker中的MySQL容器
+go run main.go \
+  --Host "mysql://root:testpassword@tcp(172.17.0.2:3306)/appdb" \
+  -u "*U*" \
+  -p "*P*" \
+  -a "dummy" \
+  -d 1 \
+  -t 8
+```
+
+**云数据库测试：**
+```bash
+# AWS RDS MySQL测试
+go run main.go \
+  --Host "mysql://admin:CloudPass123@tcp(database-1.xxx.us-east-1.rds.amazonaws.com:3306)/application" \
+  -u "custom_users.txt" \
+  -p "custom_passwords.txt" \
+  -a "dummy" \
+  -d 3 \
+  -t 4
+```
+
+#### 2.5.6 故障排除指南
+
+| 问题现象 | 可能原因 | 解决方案 |
+|----------|----------|----------|
+| **连接被拒绝** | 1. 数据库服务未运行<br>2. 防火墙阻止连接<br>3. 主机地址错误 | 1. 检查MySQL服务状态<br>2. 验证防火墙规则(3306端口)<br>3. 确认主机IP和端口正确 |
+| **认证失败** | 1. 用户名或密码错误<br>2. 用户没有远程连接权限<br>3. 密码策略限制 | 1. 使用正确的凭证组合<br>2. 授予用户远程访问权限<br>3. 检查密码复杂度要求 |
+| **连接超时** | 1. 网络延迟过高<br>2. 数据库负载过大<br>3. 连接池耗尽 | 1. 增加`-d`延迟参数<br>2. 减少`-t`线程数<br>3. 检查数据库性能 |
+| **协议不支持** | 1. 使用了错误的连接格式<br>2. MySQL版本不兼容 | 1. 使用正确的DSN格式<br>2. 确认MySQL版本支持 |
+| **文件不存在** | 1. 字典文件路径错误<br>2. 自动下载失败 | 1. 检查文件路径是否正确<br>2. 手动下载字典文件 |
+
+#### 2.5.7 敏感参数警告
+
+**重要安全警告**：
+
+1. **连接字符串泄露风险**：MySQL DSN包含数据库凭证，严禁提交到版本控制系统或公开分享
+2. **字典文件内容**：密码字典文件可能包含常见密码，妥善保管防止被恶意利用
+3. **日志记录**：工具会记录连接尝试信息，测试完成后建议清理日志文件
+4. **环境变量**：使用环境变量存储敏感参数，避免在命令行历史中暴露
+
+#### 2.5.8 环境变量迁移说明
+
+为提升安全性，建议将敏感参数迁移到环境变量中：
+
+**传统方式（不安全）：**
+```bash
+go run main.go --Host "mysql://root:MyPassword123@tcp(127.0.0.1:3306)/" ...
+```
+
+**环境变量方式（推荐）：**
+```bash
+export DB_DSN="mysql://root:MyPassword123@tcp(127.0.0.1:3306)/"
+go run main.go --Host "$DB_DSN" ...
+```
+
+**高级配置（.env文件）：**
+```bash
+# 创建.env文件
+echo 'DB_DSN="mysql://root:MyPassword123@tcp(127.0.0.1:3306)/"' > .env
+echo 'USERS_FILE="downloads/data/users.txt"' >> .env
+echo 'PASSWORDS_FILE="downloads/data/rockyou.txt"' >> .env
+
+# 使用环境变量
+export $(cat .env | xargs)
+go run main.go --Host "$DB_DSN" -u "$USERS_FILE" -p "$PASSWORDS_FILE" ...
+```
+
+#### 2.5.9 连接验证方法
+
+在开始批量测试前，建议先验证数据库连接是否正常：
+
+**手动验证连接：**
+```bash
+# 使用单个已知正确的凭证测试
+go run main.go \
+  --Host "mysql://root:correctpassword@tcp(127.0.0.1:3306)/" \
+  -u <(echo "root") \
+  -p <(echo "correctpassword") \
+  -a "dummy" \
+  -d 0 \
+  -t 1
+```
+
+**使用测试脚本验证：**
+```bash
+# 创建测试脚本 test_mysql.sh
+#!/bin/bash
+DSN="$1"
+USER="$2"
+PASS="$3"
+echo "测试连接: $USER@$DSN"
+# 使用工具验证连接
+```
+
+#### 2.5.10 线程数推荐
+
+根据不同的测试场景，推荐以下线程数配置：
+
+| 测试场景 | 推荐线程数 | 推荐延迟 | 说明 |
+|----------|------------|----------|------|
+| **本地数据库** | 10-20 | 0-1秒 | 低延迟环境可适度提高并发 |
+| **远程数据库** | 5-10 | 2-5秒 | 网络延迟较高，减少并发 |
+| **云数据库** | 8-15 | 1-3秒 | 云服务弹性较好，中等并发 |
+| **敏感生产环境** | 2-5 | 5-10秒 | 最小化对生产系统的影响 |
+| **性能压测** | 20-50 | 0秒 | 仅在授权下进行压力测试 |
+
+> **性能提示**：过高的线程数可能导致数据库连接池耗尽或触发安全防护，建议从低线程数开始逐步增加。
 
 ## 3. 技术原理
 
