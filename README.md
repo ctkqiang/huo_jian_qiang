@@ -338,13 +338,12 @@ go run main.go --Host "$DB_DSN" -u "$USERS_FILE" -p "$PASSWORDS_FILE" ...
 **手动验证连接：**
 ```bash
 # 使用单个已知正确的凭证测试
-go run main.go \
-  --Host "mysql://root:correctpassword@tcp(127.0.0.1:3306)/" \
-  -u <(echo "root") \
-  -p <(echo "correctpassword") \
-  -a "dummy" \
-  -d 0 \
-  -t 1
+go run main.go \    
+  -Host "mysql://db.example.com:3306" \
+  -u "*U*" \
+  -p "*P*" \
+  -a "db_specific_test" \
+  -t 8
 ```
 
 **使用测试脚本验证：**
